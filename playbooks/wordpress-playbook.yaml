@@ -3,11 +3,14 @@
   hosts: lnx
   become: true
   vars:
-    ansible_python_interpreter: /usr/bin/python3
     mysql_root_password: Skills39
     wordpress_db: wordpress_db
     wordpress_user: wpuser
     wordpress_password: Skills39
+
+    web_root: /var/www
+    config_dir: ../config
+    template_dir: ../templates
 
   tasks:
     - name: Update apt cache
@@ -52,27 +55,27 @@
 
     - name: Create wordpress.stembayo.id directory
       ansible.builtin.file:
-        path: /var/www/wordpress.stembayo.id
+        path: "{{ web_root }}/wordpress.stembayo.id"
         state: directory
         mode: "0755"
 
     - name: Copy configuration file for wordpress.stembayo.id
       ansible.builtin.copy:
-        src: ../config/nginx/vhost/wordpress.stembayo.id
+        src: "{{ config_dir }}/nginx/vhost/wordpress.stembayo.id"
         dest: /etc/nginx/sites-available/wordpress.stembayo.id
         mode: "0755"
 
     - name: Download and unpack latest WordPress
       ansible.builtin.unarchive:
         src: https://wordpress.org/latest.tar.gz
-        dest: "/var/www/wordpress.stembayo.id"
+        dest: "{{ web_root }}/wordpress.stembayo.id"
         remote_src: true
-        creates: "/var/www/wordpress.stembayo.id/wordpress"
+        creates: "{{ web_root }}/wordpress.stembayo.id/wordpress"
 
     - name: Set up wp-config
       ansible.builtin.template:
-        src: "files/wordpress/wp-config.php.j2"
-        dest: "/var/www/wordpress.stembayo.id/wordpress/wp-config.php"
+        src: "{{ template_dir }}/wordpress/wp-config.php.j2"
+        dest: "{{ web_root }}/wordpress.stembayo.id/wordpress/wp-config.php"
         mode: "0755"
 
     - name: Enable wordpress.stembayo.id
@@ -87,3 +90,4 @@
       ansible.builtin.service:
         name: nginx
         state: restarted
+        daemon_reload: true

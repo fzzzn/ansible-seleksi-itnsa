@@ -1,0 +1,63 @@
+# ---
+# - name: Generate Root CA, Intermediate, and End Entity Certificates
+#   hosts: test
+#   gather_facts: false
+#   vars:
+#     root_ca_key_path: /home/fauzan/ansible/lks-itnsa/ca/root_ca.key
+#     root_ca_cert_path: /home/fauzan/ansible/lks-itnsa/ca/root_ca.crt
+#     intermediate_key_path: /home/fauzan/ansible/lks-itnsa/ca/intermediate.key
+#     intermediate_csr_path: /home/fauzan/ansible/lks-itnsa/ca/intermediate.csr
+#     intermediate_cert_path: /home/fauzan/ansible/lks-itnsa/ca/intermediate.crt
+#     end_entity_key_path: /home/fauzan/ansible/lks-itnsa/ca/end_entity.key
+#     end_entity_csr_path: /home/fauzan/ansible/lks-itnsa/ca/end_entity.csr
+#     end_entity_cert_path: /home/fauzan/ansible/lks-itnsa/ca/end_entity.crt
+#     # Set your certificate details here
+#     certificate_details:
+#       country: "US"
+#       state: "California"
+#       locality: "San Francisco"
+#       organization: "Example Inc"
+#       organizational_unit: "IT Department"
+#       common_name: "example.com"
+
+#   tasks:
+#     - name: Generate Root CA private key
+#       command: openssl genrsa -out {{ root_ca_key_path }} 2048
+#       register: root_ca_key_generation
+
+#     - name: Generate Root CA certificate
+#       command: |
+#         openssl req -x509 -new -nodes -key {{ root_ca_key_path }} -sha256 \
+#         -days 3650 -out {{ root_ca_cert_path }} \
+#         -subj "/C={{ certificate_details.country }}/ST={{ certificate_details.state }}/L={{ certificate_details.locality }}/O={{ certificate_details.organization }}/OU={{ certificate_details.organizational_unit }}/CN={{ certificate_details.common_name }}"
+#       when: root_ca_key_generation is succeeded
+
+#     - name: Generate Intermediate private key
+#       command: openssl genrsa -out {{ intermediate_key_path }} 2048
+#       register: intermediate_key_generation
+
+#     - name: Generate Intermediate certificate signing request
+#       command: |
+#         openssl req -new -key {{ intermediate_key_path }} -out {{ intermediate_csr_path }} \
+#         -subj "/C={{ certificate_details.country }}/ST={{ certificate_details.state }}/L={{ certificate_details.locality }}/O={{ certificate_details.organization }}/OU={{ certificate_details.organizational_unit }}/CN={{ certificate_details.common_name }}"
+#       when: intermediate_key_generation is succeeded
+
+#     - name: Sign Intermediate certificate with Root CA
+#       command: openssl x509 -req -in {{ intermediate_csr_path }} -CA {{ root_ca_cert_path }} \
+#         -CAkey {{ root_ca_key_path }} -CAcreateserial -out {{ intermediate_cert_path }} -days 365 -sha256
+#       when: intermediate_key_generation is succeeded
+
+#     - name: Generate End Entity private key
+#       command: openssl genrsa -out {{ end_entity_key_path }} 2048
+#       register: end_entity_key_generation
+
+#     - name: Generate End Entity certificate signing request
+#       command: |
+#         openssl req -new -key {{ end_entity_key_path }} -out {{ end_entity_csr_path }} \
+#         -subj "/C={{ certificate_details.country }}/ST={{ certificate_details.state }}/L={{ certificate_details.locality }}/O={{ certificate_details.organization }}/OU={{ certificate_details.organizational_unit }}/CN={{ certificate_details.common_name }}"
+#       when: end_entity_key_generation is succeeded
+
+#     - name: Sign End Entity certificate with Intermediate CA
+#       command: openssl x509 -req -in {{ end_entity_csr_path }} -CA {{ intermediate_cert_path }} \
+#         -CAkey {{ intermediate_key_path }} -CAcreateserial -out {{ end_entity_cert_path }} -days 365 -sha256
+#       when: end_entity_key_generation is succeeded

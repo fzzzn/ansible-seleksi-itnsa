@@ -1,0 +1,19 @@
+---
+- name: Test playbook
+  hosts: test
+
+  vars:
+    usernames:
+      - user1
+      - user2
+      - user3
+
+  tasks:
+    - name: Add user to userlist
+      ansible.builtin.copy:
+        dest: /home/fauzan/ansible/lks-itnsa/vsftpd.userlist
+        content: |
+          {% for user in usernames %}
+          {{ user }}
+          {% endfor %}
+        mode: '0644'

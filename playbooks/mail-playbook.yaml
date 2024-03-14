@@ -1,0 +1,85 @@
+---
+- name: Install mail service
+  hosts: lnx
+  become: true
+
+  vars:
+    mysql_root_password: Skills39
+    roundcube_db: wordpress_db
+    roundcube_user: wpuser
+    roundcube_password: Skills39
+
+    web_root: /var/www
+    config_dir: ../config
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Create /etc/postfix directory
+      ansible.builtin.file:
+        path: "/etc/postfix"
+        state: directory
+        mode: "0644"
+
+    - name: Copy postfix main.cf configuration
+      ansible.builtin.copy:
+        src: "{{ config_dir }}/postfix/main.cf"
+        dest: /etc/postfix/main.cf
+        mode: "0644"
+
+    - name: Copy postfix master.cf configuration
+      ansible.builtin.copy:
+        src: "{{ config_dir }}/postfix/master.cf"
+        dest: /etc/postfix/master.cf
+        mode: "0644"
+
+    - name: Install postfix package
+      ansible.builtin.apt:
+        name: postfix
+        state: present
+
+    - name: Maildir make
+      ansible.builtin.command:
+        cmd: maildirmake.dovecot /etc/skel/Maildir
+      register: maildirmake_out
+      changed_when: maildirmake_out.rc != 0
+
+    - name: Install dovecot package
+      ansible.builtin.apt:
+        name:
+          - dovecot-imapd
+          - dovecot-pop3d
+        state: present
+
+    - name: Change dovecot 10-mail.conf configuration
+      ansible.builtin.lineinfile:
+        path: /etc/dovecot/conf.d/10-mail.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        state: present
+      with_items:
+        - { regexp: 'mail_location = mbox:~/mail:INBOX=/var/mail/%u', line: '# mail_location = mbox:~/mail:INBOX=/var/mail/%u' }
+        - { regexp: '#   mail_location = maildir:~/Maildir', line: 'mail_location = maildir:~/Maildir' }
+
+    - name: Restart Dovecot
+      ansible.builtin.service:
+        name: dovecot
+        state: restarted
+        daemon_reload: true
+
+    - name: Restart Postfix
+      ansible.builtin.service:
+        name: postfix
+        state: restarted
+        daemon_reload: true
+
+    - name: Download and unpack latest Roundcube
+      ansible.builtin.unarchive:
+        src: https://github.com/roundcube/roundcubemail/releases/download/1.6.6/roundcubemail-1.6.6-complete.tar.gz
+        dest: "{{ web_root }}"
+        creates: "{{ web_root }}/roundcube"
+        remote_src: true
+
+    # Belum selesai wkwk :)

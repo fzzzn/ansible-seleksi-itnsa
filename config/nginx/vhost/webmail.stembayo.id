@@ -1,21 +1,21 @@
 server {
         listen 80;
-        server_name wordpress.stembayo.id;
+        server_name webmail.stembayo.id;
 
         return 301 https://$host$request_uri;
 }
 
 server {
             listen 443 ssl;
-            root /var/www/wordpress.stembayo.id/wordpress;
+            root /var/www/roundcube;
             index index.php index.html;
-            server_name wordpress.stembayo.id;
+            server_name webmail.stembayo.id;
 
             ssl_certificate /ssl/stembayo.id/stembayo.id.pem;
             ssl_certificate_key /ssl/stembayo.id/stembayo.id.key;
 
-            access_log /var/log/nginx/wordpress.access.log;
-    	    error_log /var/log/nginx/wordpress.error.log;
+	        access_log /var/log/nginx/webmail.access.log;
+    	    error_log /var/log/nginx/webmail.error.log;
 
             location / {
                          try_files $uri $uri/ =404;

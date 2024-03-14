@@ -1,0 +1,35 @@
+---
+- name: Initial Debian Configuration
+  hosts: lnx
+  become: true
+
+  tasks:
+    - name: Hardening sshd_config
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        state: present
+      with_items:
+        - { regexp: '#Port 22', line: 'Port 22' }
+        - { regexp: '#ListenAddress 0.0.0.0', line: 'ListenAddress 0.0.0.0' }
+        - { regexp: '#PermitRootLogin prohibit-password', line: 'PermitRootLogin no' }
+
+    - name: Restart sshd service
+      ansible.builtin.systemd_service:
+        name: sshd
+        state: restarted
+        daemon_reload: true
+
+    - name: Set FQDN hostname
+      ansible.builtin.command:
+        cmd: hostnamectl set-hostname lnx.stembayo.id
+      register: set_fqdn_out
+      changed_when: set_fqdn_out.rc != 0
+
+    - name: Set /etc/hosts file
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: "^172.16.18.43*"
+        line: "172.16.18.43    lnx.stembayo.id lnx"
+        state: present

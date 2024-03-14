@@ -2,6 +2,12 @@
 - name: Install vsftpd
   hosts: lnx
   become: true
+
+  vars:
+    config_dir: ../config
+    usernames:
+      - competitor
+
   tasks:
     - name: Update apt cache
       ansible.builtin.apt:
@@ -23,16 +29,19 @@
       ansible.builtin.copy:
         dest: /etc/vsftpd.userlist
         content: |
-          competitor
+          {% for user in usernames %}
+          {{ user }}
+          {% endfor %}
         mode: '0644'
 
     - name: Create share directory
       ansible.builtin.file:
-        path: /home/competitor/share
+        path: "/home/{{ item }}/share"
         state: directory
-        owner: competitor
-        group: competitor
+        owner: "{{ item }}"
+        group: "{{ item }}"
         mode: '0755'
+      loop: "{{ usernames }}"
 
     - name: Remove vsftpd.conf
       ansible.builtin.file:
@@ -41,7 +50,7 @@
 
     - name: Copy vsftpd.conf
       ansible.builtin.copy:
-        src: ../config/vsftpd/vsftpd.conf
+        src: "{{ config_dir }}/vsftpd/vsftpd.conf"
         dest: /etc/vsftpd.conf
         mode: '0644'
 

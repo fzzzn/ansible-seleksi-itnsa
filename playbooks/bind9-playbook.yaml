@@ -2,6 +2,10 @@
 - name: Install bind9
   hosts: lnx
   become: true
+
+  vars:
+    config_dir: ../config
+
   tasks:
     - name: Update apt cache
       ansible.builtin.apt:
@@ -17,13 +21,13 @@
 
     - name: Copy BIND9 configuration file
       ansible.builtin.copy:
-        src: ../config/bind/named
+        src: "{{ config_dir }}/bind/named"
         dest: /etc/default/named
         mode: '0644'
 
     - name: Copy BIND9 configuration file
       ansible.builtin.copy:
-        src: ../config/bind/named.conf.local
+        src: "{{ config_dir }}/bind/named.conf.local"
         dest: /etc/bind/named.conf.local
         owner: root
         group: bind
@@ -31,7 +35,7 @@
 
     - name: Copy BIND9 configuration options file
       ansible.builtin.copy:
-        src: ../config/bind/named.conf.options
+        src: "{{ config_dir }}/bind/named.conf.options"
         dest: /etc/bind/named.conf.options
         owner: root
         group: bind
@@ -39,7 +43,7 @@
 
     - name: Copy BIND9 zone file
       ansible.builtin.copy:
-        src: ../config/bind/db.stembayo.id
+        src: "{{ config_dir }}/bind/db.stembayo.id"
         dest: /etc/bind/db.stembayo.id
         owner: root
         group: bind
@@ -47,7 +51,7 @@
 
     - name: Copy BIND9 reverse zone file
       ansible.builtin.copy:
-        src: ../config/bind/db.172.16.18
+        src: "{{ config_dir }}/bind/db.172.16.18"
         dest: /etc/bind/db.172.16.18
         owner: root
         group: bind
