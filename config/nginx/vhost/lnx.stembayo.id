@@ -1,0 +1,20 @@
+server {
+        listen 80;
+        server_name lnx.stembayo.id;
+
+        return 301 https://$host$request_uri;
+}
+
+server {
+        listen 443 ssl;
+        server_name lnx.stembayo.id;
+        ssl_certificate /ssl/stembayo.id/stembayo.id.pem;
+        ssl_certificate_key /ssl/stembayo.id/stembayo.id.key;
+
+        root /var/www/lnx.stembayo.id;
+        index index.html;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }
+}

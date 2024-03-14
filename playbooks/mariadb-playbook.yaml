@@ -1,0 +1,50 @@
+---
+- name: Install MariaDB
+  hosts: lnx
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    mysql_root_password: Skills39
+    wordpress_db: wordpress_db
+    wordpress_user: wpuser
+    wordpress_password: Skills39
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install MariaDB package
+      ansible.builtin.apt:
+        name:
+          - mariadb-server
+          - python3-mysqldb
+        state: present
+
+    - name: Start MariaDB
+      ansible.builtin.systemd_service:
+        state: started
+        name: mariadb
+
+    - name: Set the root password
+      community.mysql.mysql_user:
+        name: root
+        password: "{{ mysql_root_password }}"
+        column_case_sensitive: false
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Remove all anonymous user accounts
+      community.mysql.mysql_user:
+        name: ''
+        host_all: true
+        state: absent
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        column_case_sensitive: false
+
+    - name: Remove the MySQL test database
+      community.mysql.mysql_db:
+        name: test
+        state: absent
+        login_user: root
+        login_password: "{{ mysql_root_password }}"

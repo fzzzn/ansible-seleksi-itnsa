@@ -1,0 +1,19 @@
+;
+; BIND data file for local loopback interface
+;
+$TTL    604800
+@       IN      SOA     stembayo.id. root.stembayo.id. (
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      stembayo.id.
+@       IN      A       172.16.18.43 
+lnx     IN      A       172.16.18.43
+mail    IN      A       172.16.18.43
+webmail    IN      A       172.16.18.43
+basic-auth      IN      A       172.16.18.43
+wordpress       IN      A       172.16.18.43
+www.wordpress   IN      A       172.16.18.43

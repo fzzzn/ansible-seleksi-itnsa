@@ -1,0 +1,48 @@
+server {
+        listen 80;
+        server_name wordpress.stembayo.id;
+
+        return 301 https://$host$request_uri;
+}
+
+server {
+            listen 443 ssl;
+            root /var/www/wordpress.stembayo.id/wordpress;
+            index index.php index.html;
+            server_name wordpress.stembayo.id;
+
+            ssl_certificate /ssl/stembayo.id/stembayo.id.pem;
+            ssl_certificate_key /ssl/stembayo.id/stembayo.id.key;
+
+	    access_log /var/log/nginx/wordpress.access.log;
+    	    error_log /var/log/nginx/wordpress.error.log;
+
+            location / {
+                         try_files $uri $uri/ =404;
+            }
+
+            location ~ \.php$ {
+                         include snippets/fastcgi-php.conf;
+                         fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+            }
+            
+            location ~ /\.ht {
+                         deny all;
+            }
+
+            location = /favicon.ico {
+                         log_not_found off;
+                         access_log off;
+            }
+
+            location = /robots.txt {
+                         allow all;
+                         log_not_found off;
+                         access_log off;
+           }
+       
+            location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ {
+                         expires max;
+                         log_not_found off;
+           }
+}

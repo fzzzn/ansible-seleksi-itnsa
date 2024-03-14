@@ -1,0 +1,89 @@
+---
+- name: Install Wordpress
+  hosts: lnx
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    mysql_root_password: Skills39
+    wordpress_db: wordpress_db
+    wordpress_user: wpuser
+    wordpress_password: Skills39
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install PHP package
+      ansible.builtin.apt:
+        name:
+          - php
+          - php-cli
+          - php-fpm
+          - php-mysql
+          - php-json
+          - php-opcache
+          - php-mbstring
+          - php-xml
+          - php-xmlrpc
+          - php-gd
+          - php-curl
+          - php-soap
+          - php-intl
+          - php-zip
+        state: present
+
+    - name: Create a new database for Wordpress
+      community.mysql.mysql_db:
+        name: "{{ wordpress_db }}"
+        state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    - name: Create user for Wordpress
+      community.mysql.mysql_user:
+        state: present
+        name: "{{ wordpress_user }}"
+        column_case_sensitive: false
+        password: "{{ wordpress_password }}"
+        priv: "{{ wordpress_db }}.*:ALL"
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    - name: Create wordpress.stembayo.id directory
+      ansible.builtin.file:
+        path: /var/www/wordpress.stembayo.id
+        state: directory
+        mode: "0755"
+
+    - name: Copy configuration file for wordpress.stembayo.id
+      ansible.builtin.copy:
+        src: ../config/nginx/vhost/wordpress.stembayo.id
+        dest: /etc/nginx/sites-available/wordpress.stembayo.id
+        mode: "0755"
+
+    - name: Download and unpack latest WordPress
+      ansible.builtin.unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: "/var/www/wordpress.stembayo.id"
+        remote_src: true
+        creates: "/var/www/wordpress.stembayo.id/wordpress"
+
+    - name: Set up wp-config
+      ansible.builtin.template:
+        src: "files/wordpress/wp-config.php.j2"
+        dest: "/var/www/wordpress.stembayo.id/wordpress/wp-config.php"
+        mode: "0755"
+
+    - name: Enable wordpress.stembayo.id
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/wordpress.stembayo.id
+        dest: /etc/nginx/sites-enabled/wordpress.stembayo.id
+        state: link
+      notify: Restart Nginx
+
+  handlers:
+    - name: Restart Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted

@@ -1,0 +1,52 @@
+---
+- name: Install vsftpd
+  hosts: lnx
+  become: true
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install vsftpd package
+      ansible.builtin.apt:
+        name: vsftpd
+        state: present
+
+    - name: Create backup configuration
+      ansible.builtin.copy:
+        remote_src: true
+        src: /etc/vsftpd.conf
+        dest: /etc/vsftpd.conf.backup
+        mode: '0644'
+
+    - name: Add user to userlist
+      ansible.builtin.copy:
+        dest: /etc/vsftpd.userlist
+        content: |
+          competitor
+        mode: '0644'
+
+    - name: Create share directory
+      ansible.builtin.file:
+        path: /home/competitor/share
+        state: directory
+        owner: competitor
+        group: competitor
+        mode: '0755'
+
+    - name: Remove vsftpd.conf
+      ansible.builtin.file:
+        path: /etc/vsftpd.conf
+        state: absent
+
+    - name: Copy vsftpd.conf
+      ansible.builtin.copy:
+        src: ../config/vsftpd/vsftpd.conf
+        dest: /etc/vsftpd.conf
+        mode: '0644'
+
+    - name: Restart vsftpd service
+      ansible.builtin.systemd_service:
+        name: vsftpd
+        state: restarted
+        daemon_reload: true

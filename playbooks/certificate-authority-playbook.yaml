@@ -1,0 +1,130 @@
+---
+- name: Setup certificate authority
+  hosts: lnx
+  become: true
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install easy-rsa package
+      ansible.builtin.apt:
+        name: easy-rsa
+        state: present
+
+    - name: Create /ssl directory
+      ansible.builtin.file:
+        path: /ssl
+        state: directory
+        mode: '0755'
+
+    - name: Find files inside /ssl directory
+      become: true
+      ansible.builtin.find:
+        paths: "/ssl"
+        patterns: "*"
+        recurse: false
+      register: ssl_files
+
+    - name: Find directories inside /ssl directory
+      ansible.builtin.find:
+        paths: "/ssl"
+        patterns: "*"
+        recurse: true
+        file_type: directory
+      register: ssl_dirs
+
+    - name: Remove files inside /ssl directory
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ ssl_files.files }}"
+
+    - name: Remove directories inside /ssl directory
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ ssl_dirs.files }}"
+
+    - name: Create newcerts and crl directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /ssl/newcerts
+        - /ssl/crl
+
+    - name: Create index.txt file
+      ansible.builtin.file:
+        path: /ssl/index.txt
+        state: touch
+        mode: '0755'
+
+    - name: Create serial file
+      ansible.builtin.copy:
+        dest: /ssl/serial
+        content: |
+          0000
+        mode: '0755'
+
+    - name: Copy OpenSSL configuration file
+      ansible.builtin.copy:
+        src: ../config/openssl/openssl.cnf
+        dest: /ssl/openssl.cnf
+        mode: '0755'
+
+    - name: Create root ca.key
+      ansible.builtin.command:
+        cmd: openssl genrsa -out ca.key 4096
+        chdir: /ssl/
+      register: create_root_ca_key_out
+      changed_when: create_root_ca_key_out.rc != 0
+
+    - name: Create root ca.crt
+      ansible.builtin.command:
+        cmd: openssl req -new -key ca.key -out ca.crt -config openssl.cnf -x509 -days 365
+        chdir: /ssl/
+      register: create_root_ca_crt_out
+      changed_when: create_root_ca_crt_out.rc != 0
+
+    - name: Create sub CA key stembayo.id
+      ansible.builtin.command:
+        cmd: openssl genrsa -out stembayo.id.key 4096
+        chdir: /ssl/
+      register: create_sub_ca_key_out
+      changed_when: create_sub_ca_key_out.rc != 0
+
+    - name: Create sub CA CSR stembayo.id
+      ansible.builtin.command:
+        cmd: openssl req -new -key stembayo.id.key -out stembayo.id.csr -config openssl.cnf
+        chdir: /ssl/
+      register: create_sub_ca_csr_out
+      changed_when: create_sub_ca_csr_out.rc != 0
+
+    - name: Signing sub CA CSR stembayo.id
+      ansible.builtin.command:
+        cmd: openssl ca -batch -config openssl.cnf -in stembayo.id.csr -extfile openssl.cnf -extensions v3_req
+        chdir: /ssl/
+      register: sign_sub_ca_csr_out
+      changed_when: sign_sub_ca_csr_out.rc != 0
+
+    - name: Create stembayo.id directory
+      ansible.builtin.file:
+        path: /ssl/stembayo.id
+        state: directory
+        mode: '0755'
+
+    - name: Copy stembayo.id.key into stembayo.id directory
+      ansible.builtin.copy:
+        remote_src: true
+        src: /ssl/stembayo.id.key
+        dest: /ssl/stembayo.id/stembayo.id.key
+        mode: '0755'
+
+    - name: Copy stembayo.id.pem into stembayo.id directory
+      ansible.builtin.copy:
+        remote_src: true
+        src: /ssl/newcerts/00.pem
+        dest: /ssl/stembayo.id/stembayo.id.pem
+        mode: '0755'

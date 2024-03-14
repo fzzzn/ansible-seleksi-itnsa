@@ -1,0 +1,7 @@
+---
+- name: Configure sshd configuration
+  hosts: lnx
+  become: true
+
+  tasks:
+    - name: 

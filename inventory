@@ -1,0 +1,2 @@
+[lnx]
+10.5.7.244 ansible_port=2222 ansible_user=competitor ansible_pass=Skills39 ansible_sudo_pass=Skills39

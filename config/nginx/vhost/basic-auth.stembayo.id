@@ -1,0 +1,23 @@
+server {
+        listen 80;
+        server_name basic-auth.stembayo.id;
+
+        return 301 https://$host$request_uri;
+}
+
+server {
+        listen 443 ssl;
+        server_name basic-auth.stembayo.id;
+        ssl_certificate /ssl/stembayo.id/stembayo.id.pem;
+        ssl_certificate_key /ssl/stembayo.id/stembayo.id.key;
+
+        root /var/www/basic-auth.stembayo.id;
+        index index.html;
+
+        auth_basic "Restricted Content";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+
+        location / {
+                try_files $uri $uri/ =404;
+        }
+}

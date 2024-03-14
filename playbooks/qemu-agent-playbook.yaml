@@ -1,0 +1,24 @@
+---
+- name: Install qemu-guest-agent
+  hosts: lnx
+  become: true
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install qemu-guest-agent package
+      ansible.builtin.apt:
+        name: qemu-guest-agent
+        state: present
+
+    - name: Reboot machine
+      ansible.builtin.reboot:
+
+    - name: Wait for machine to come back online
+      ansible.builtin.wait_for:
+        host: "{{ inventory_hostname }}"
+        port: 22
+        state: started
+        delay: 10
+        timeout: 300

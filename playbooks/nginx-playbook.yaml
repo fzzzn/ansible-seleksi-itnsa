@@ -1,0 +1,115 @@
+---
+- name: Install nginx
+  hosts: lnx
+  become: true
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Install nginx package
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+
+    # lnx.stembayo.id
+
+    - name: Create lnx.stembayo.id directory
+      ansible.builtin.file:
+        path: /var/www/lnx.stembayo.id
+        state: directory
+        mode: "0755"
+
+    - name: Copy html file for lnx.stembayo.id
+      ansible.builtin.copy:
+        src: ../config/nginx/html/lnx.html
+        dest: /var/www/lnx.stembayo.id/index.html
+        mode: "0755"
+
+    - name: Copy configuration file for lnx.stembayo.id
+      ansible.builtin.copy:
+        src: ../config/nginx/vhost/lnx.stembayo.id
+        dest: /etc/nginx/sites-available/lnx.stembayo.id
+        mode: "0755"
+
+    - name: Enable lnx.stembayo.id
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/lnx.stembayo.id
+        dest: /etc/nginx/sites-enabled/lnx.stembayo.id
+        state: link
+      notify: Restart Nginx
+
+    # stembayo.id
+
+    - name: Create stembayo.id directory
+      ansible.builtin.file:
+        path: /var/www/stembayo.id
+        state: directory
+        mode: "0755"
+
+    - name: Copy html file for stembayo.id
+      ansible.builtin.copy:
+        src: ../config/nginx/html/stembayo.html
+        dest: /var/www/stembayo.id/index.html
+        mode: "0755"
+
+    - name: Copy configuration file for stembayo.id
+      ansible.builtin.copy:
+        src: ../config/nginx/vhost/stembayo.id
+        dest: /etc/nginx/sites-available/stembayo.id
+        mode: "0755"
+
+    - name: Enable stembayo.id
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/stembayo.id
+        dest: /etc/nginx/sites-enabled/stembayo.id
+        state: link
+      notify: Restart Nginx
+
+    # basic-auth.stembayo.id
+
+    - name: Create basic-auth.stembayo.id directory
+      ansible.builtin.file:
+        path: /var/www/basic-auth.stembayo.id
+        state: directory
+        mode: "0755"
+
+    - name: Copy html file for basic-auth.stembayo.id
+      ansible.builtin.copy:
+        src: ../config/nginx/html/basic-auth.html
+        dest: /var/www/basic-auth.stembayo.id/index.html
+        mode: "0755"
+
+    - name: Copy configuration file for basic-auth.stembayo.id
+      ansible.builtin.copy:
+        src: ../config/nginx/vhost/basic-auth.stembayo.id
+        dest: /etc/nginx/sites-available/basic-auth.stembayo.id
+        mode: "0755"
+
+    - name: Create .htpasswd username
+      ansible.builtin.command: 'sh -c "printf "%s:" "competitor" >> /etc/nginx/.htpasswd"'
+      register: username_out
+      changed_when: username_out.rc != 0
+
+    - name: Generate password
+      ansible.builtin.command: 'sh -c "echo "Skills39" | openssl passwd -apr1 -stdin >> /etc/nginx/.htpasswd"'
+      register: password_out
+      changed_when: password_out.rc != 0
+
+    - name: Append newline to htpasswd
+      ansible.builtin.command: 'sh -c "printf "\n" >> /etc/nginx/.htpasswd"'
+      register: append_newline_out
+      changed_when: append_newline_out.rc != 0
+
+    - name: Enable basic-auth.stembayo.id
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/basic-auth.stembayo.id
+        dest: /etc/nginx/sites-enabled/basic-auth.stembayo.id
+        state: link
+      notify: Restart Nginx
+
+  handlers:
+    - name: Restart Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
